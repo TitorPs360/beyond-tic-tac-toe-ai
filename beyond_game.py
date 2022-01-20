@@ -50,10 +50,6 @@ CROSS_WIDTH = {
   1 : 17
 }
 
-# CROSS_WIDTH = 25
-
-SPACE = 55
-
 # define game color
 RED = (255, 0, 0)
 BG_COLOR = (20, 200, 160)
@@ -177,7 +173,6 @@ class TicTacToeGame:
     self.board[row][col][0] = self.player
     self.board[row][col][1] = self.selecting_size
     self.deck[self.player][self.selecting_size - 1] = 0
-    self.selecting_size = 0
 
   # check this block is available? 
   def check_available(self, row, col):
@@ -311,14 +306,20 @@ class TicTacToeGame:
             if self.center_x_list[i] - int( CIRCLE_RADIUS[ i + 1 ] // 2 ) - int( CIRCLE_WIDTH[ i + 1 ] // 2 ) < mouseX and mouseX < self.center_x_list[i] + int( CIRCLE_RADIUS[ i + 1 ] // 2 ) + int( CIRCLE_WIDTH[ i + 1 ] // 2 ):
               # set selecting size
               self.selecting_size = i + 1
+              
+              # check size is available
+              if self.deck[self.player][self.selecting_size - 1] == 1:
+                # reset screen
+                self.reset_screen()
 
-              # reset screen
-              self.reset_screen()
+                # draw size indicator
+                self.draw_selecting_size(i)
 
-              # draw size indicator
-              self.draw_selecting_size(i)
+                break
+              else:
+                print("This size is used")
 
-              break
+                break
         # click in table
         else:
           clicked_col = int(mouseX // SQUARE_SIZE)
@@ -346,6 +347,9 @@ class TicTacToeGame:
 
               # reset screen
               self.reset_screen()
+
+              # reset size
+              self.selecting_size = 0
 
       if event.type == pygame.KEYDOWN:
         # restart game

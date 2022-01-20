@@ -1,6 +1,9 @@
 import pygame, sys
 import numpy as np
 import pickle
+import random
+
+import time
 
 # init pygame
 pygame.init()
@@ -59,6 +62,9 @@ CIRCLE_COLOR = (239, 231, 200)
 CROSS_COLOR = (66, 66, 66)
 SELECTING_COLOR = (237, 191, 33)
 
+# game speed
+SPEED = 200
+
 class Player:
   def __init__(self, name, exp_rate=0.3):
     self.name = name
@@ -73,8 +79,8 @@ class Player:
 
     for i in range(3):
       for j in range(3):
-        boardHash += board[i][j][0]
-        boardHash += board[i][j][1]
+        boardHash += str(board[i][j][0])
+        boardHash += str(board[i][j][1])
 
     return boardHash
 
@@ -87,27 +93,33 @@ class Player:
           avaible_size_list = []
           for k in avaible_size:
             if k > current_board[i][j][1]:
-              avaible_size_list.append[k]
+              avaible_size_list.append(k)
 
           if len(avaible_size_list) > 0:
-            available_positions[i + j] = avaible_size_list
+            available_positions[3*i + j] = avaible_size_list
 
     if np.random.uniform(0, 1) <= self.exp_rate:
       # take random action
-      random_position = np.random.choice(len(available_positions))
+      random_position = random.choice(list(available_positions.keys()))
       random_size = available_positions[random_position]
+      random_size_index = np.random.choice(len(random_size))
+      action = [random_position, random_size[random_size_index]]
+      # print(action)
     else:
       value_max = -999
+      # print(available_positions)
       for p in available_positions:
-        next_board = current_board.copy()
-        next_board[p] = symbol
-        next_boardHash = self.getHash(next_board)
-        value = 0 if self.states_value.get(next_boardHash) is None else self.states_value.get(next_boardHash)
-        # print("value", value)
-        if value >= value_max:
-            value_max = value
-            action = p
-    # print("{} takes action {}".format(self.name, action))
+        for s in available_positions[p]:
+          next_board = current_board.copy()
+          next_board[p // 3][p % 3][0] = symbol
+          next_board[p // 3][p % 3][1] = s
+          next_boardHash = self.getHash(next_board)
+          value = 0 if self.states_value.get(next_boardHash) is None else self.states_value.get(next_boardHash)
+          if value >= value_max:
+              value_max = value
+              action = [p, s]
+              # print(action)
+    
     return action
 
   # append a hash state
@@ -125,12 +137,12 @@ class Player:
   def reset(self):
     self.states = []
 
-  def savePolicy(self):
-    fw = open('policy_' + str(self.name), 'wb')
+  def saveModel(self):
+    fw = open('model_' + str(self.name), 'wb')
     pickle.dump(self.states_value, fw)
     fw.close()
 
-  def loadPolicy(self, file):
+  def loadModel(self, file):
     fr = open(file, 'rb')
     self.states_value = pickle.load(fr)
     fr.close()
@@ -170,8 +182,19 @@ class TicTacToeGameAI:
     # draw frame for tic tac toe
     self.draw_frame()
 
+    # pygame clock
+    self.clock = pygame.time.Clock()
+
     # store center coordinates
     self.center_x_list = []
+
+    # define player
+    self.player1 = player1
+    self.player2 = player2
+
+    self.player1_win = 0
+    self.player2_win = 0
+    self.draw = 0
 
     # setup turn 1 for O
     self.player = 1
@@ -278,6 +301,14 @@ class TicTacToeGameAI:
   def check_available(self, row, col):
     return self.board[row][col][0] != self.player and self.board[row][col][1] < self.selecting_size
 
+  def get_available_size(self):
+    avaible_size = []
+    for i in range(5):
+      if self.deck[self.player][i] == 1:
+        avaible_size.append(i + 1)
+
+    return avaible_size
+
   # check board is full -> draw
   def is_board_full(self):
     for row in range(BOARD_ROWS):
@@ -289,6 +320,17 @@ class TicTacToeGameAI:
   # check deck is out
   def is_deck_empty(self):
     return self.deck[1] == [0, 0, 0, 0, 0] and self.deck[2] == [0, 0, 0, 0, 0]
+
+  # get board hash
+  def getHash(self):
+    boardHash = ''
+
+    for i in range(3):
+      for j in range(3):
+        boardHash += str(self.board[i][j][0])
+        boardHash += str(self.board[i][j][1])
+
+    return boardHash
 
   # check win
   def check_win(self):
@@ -364,6 +406,12 @@ class TicTacToeGameAI:
     # draw table
     self.draw_frame()
 
+    # available size for players
+    self.deck = {
+      1 : [1, 1, 1, 1, 1],
+      2 : [1, 1, 1, 1, 1]
+    }
+
     # draw deck
     self.draw_deck()
 
@@ -373,110 +421,112 @@ class TicTacToeGameAI:
     # setup turn 1 for O
     self.player = 1
 
-    # available size for players
-    self.deck = {
-      1 : [1, 1, 1, 1, 1],
-      2 : [1, 1, 1, 1, 1]
-    }
-
     # setup game over state
     self.game_over = False
 
     # selecting size
     self.selecting_size = 0
 
-  # play step
-  def play(self):
-    for event in pygame.event.get():
-      if event.type == pygame.QUIT:
-        sys.exit()
+  def giveReward(self, player):
+    if player == 0:
+      self.player1.feedReward(0.5)
+      self.player2.feedReward(0.5)
+    elif player == 1:
+      self.player1.feedReward(1)
+      self.player2.feedReward(0)
+    elif player == 2:
+      self.player1.feedReward(0)
+      self.player2.feedReward(1)
 
-      # get mark position
-      if event.type == pygame.MOUSEBUTTONDOWN and not self.game_over:
+  # play step for ai vs ai
+  def play1(self, rounds=100):
+    for i in range(rounds):
+      pygame.event.pump()
 
-        mouseX = event.pos[0] 
-        mouseY = event.pos[1] 
+      print(f"Round {i}")
 
-        # mouse position to row,col
-        clicked_row = int(mouseY // SQUARE_SIZE)
-        # clicked_col = int(mouseX // SQUARE_SIZE)
+      while not self.game_over:
+        # player 1 turn
+        player1_action = self.player1.chooseAction(self.board, self.get_available_size(), self.player)
 
-        # opponent side click
-        if (clicked_row == 0):
-          print('Opponent side')
-        # our side click
-        elif (clicked_row == 4):
-          for i in range(0, 5):
-            if self.center_x_list[i] - int( CIRCLE_RADIUS[ i + 1 ] // 2 ) - int( CIRCLE_WIDTH[ i + 1 ] // 2 ) < mouseX and mouseX < self.center_x_list[i] + int( CIRCLE_RADIUS[ i + 1 ] // 2 ) + int( CIRCLE_WIDTH[ i + 1 ] // 2 ):
-              # set selecting size
-              self.selecting_size = i + 1
-              
-              # check size is available
-              if self.deck[self.player][self.selecting_size - 1] == 1:
-                # reset screen
-                self.reset_screen()
+        self.selecting_size = player1_action[1]
 
-                # draw size indicator
-                self.draw_selecting_size(i)
+        mark_row = player1_action[0] // 3
+        mark_col = player1_action[0] % 3
 
-                break
-              else:
-                print("This size is used")
+        # place mark
+        self.place_mark( mark_row, mark_col )
 
-                break
-        # click in table
+        # draw mark
+        self.draw_mark()
+
+        board_hash = self.getHash()
+        self.player1.addState(board_hash)
+
+        # check win
+        if self.check_win():
+          print("Player 1 (O) win")
+          self.player1_win += 1
+          self.giveReward(self.player)
+          self.player1.reset()
+          self.player2.reset()
+          self.game_over = True
+        # draw
+        elif self.is_board_full() or self.is_deck_empty():
+          print("Draw")
+          self.draw += 1
+          self.giveReward(0)
+          self.player1.reset()
+          self.player2.reset()
+          self.game_over = True
         else:
-          clicked_col = int(mouseX // SQUARE_SIZE)
+          # Player 2 turn
+          self.player = self.player % 2 + 1
 
-          # check markable
-          if self.check_available( clicked_row - 1, clicked_col ):
-            
-            # place mark
-            self.place_mark( clicked_row - 1, clicked_col )
+          player2_action = self.player2.chooseAction(self.board, self.get_available_size(), self.player)
 
-            # draw mark
-            self.draw_mark()
+          self.selecting_size = player2_action[1]
 
-            # check win
-            if self.check_win():
-              print(f"Player {'O' if self.player == 1 else 'X'} win")
-              self.game_over = True
-            # check draw
-            elif self.is_board_full():
-              print("draw")
-              self.game_over = True
-            elif self.is_deck_empty():
-              print("draw")
-              self.game_over = True
-            else:
-              # switch side
-              self.player = self.player % 2 + 1
+          mark_row = player2_action[0] // 3
+          mark_col = player2_action[0] % 3
 
-              # reset screen
-              self.reset_screen()
+          # place mark
+          self.place_mark( mark_row, mark_col )
 
-              # reset size
-              self.selecting_size = 0
+          # draw mark
+          self.draw_mark()
 
-      if event.type == pygame.KEYDOWN:
-        # restart game
-        if event.key == pygame.K_r:
-          print("Restarting game")
-          self.restart()
-          self.player = 1
-          self.game_over = False
-        # quiet game
-        if event.key == pygame.K_q:
-          print("Quiet game")
-          pygame.quit()
-          quit()
+          board_hash = self.getHash()
+          self.player2.addState(board_hash)
 
-    pygame.display.update()
+          # check win
+          if self.check_win():
+            print("Player 2 (X) win")
+            self.player2_win += 1
+            self.giveReward(self.player)
+            self.player1.reset()
+            self.player2.reset()
+            self.game_over = True
+          # draw
+          elif self.is_board_full() or self.is_deck_empty():
+            print("Draw")
+            self.draw += 1
+            self.giveReward(0)
+            self.player1.reset()
+            self.player2.reset()
+            self.game_over = True
+          
+        
+        self.reset_screen()
+        self.selecting_size = 0
 
-    return self.game_over
+        pygame.display.update()
+        self.clock.tick(SPEED)
 
-if __name__ == '__main__':
-  game = TicTacToeGameAI()
+      self.restart()
 
-  while True:
-    gameover = game.play()
+    print(f"Player 1 win : {self.player1_win}, Player 2 win : {self.player2_win}, Draw : {self.draw}")
+    self.player1.saveModel()
+    self.player2.saveModel()
+
+    

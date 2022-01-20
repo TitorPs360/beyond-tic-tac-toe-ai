@@ -264,6 +264,12 @@ class TicTacToeGame:
     # draw table
     self.draw_frame()
 
+    # available size for players
+    self.deck = {
+      1 : [1, 1, 1, 1, 1],
+      2 : [1, 1, 1, 1, 1]
+    }
+
     # draw deck
     self.draw_deck()
 
@@ -272,12 +278,6 @@ class TicTacToeGame:
 
     # setup turn 1 for O
     self.player = 1
-
-    # available size for players
-    self.deck = {
-      1 : [1, 1, 1, 1, 1],
-      2 : [1, 1, 1, 1, 1]
-    }
 
     # setup game over state
     self.game_over = False

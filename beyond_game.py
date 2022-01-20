@@ -186,6 +186,10 @@ class TicTacToeGame:
           return False
     return True
 
+  # check deck is out
+  def is_deck_empty(self):
+    return self.deck[1] == [0, 0, 0, 0, 0] and self.deck[2] == [0, 0, 0, 0, 0]
+
   # check win
   def check_win(self):
     # win in colum
@@ -339,6 +343,9 @@ class TicTacToeGame:
               self.game_over = True
             # check draw
             elif self.is_board_full():
+              print("draw")
+              self.game_over = True
+            elif self.is_deck_empty():
               print("draw")
               self.game_over = True
             else:

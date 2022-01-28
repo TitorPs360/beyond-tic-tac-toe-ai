@@ -1,9 +1,11 @@
 import pygame, sys
 import numpy as np
-import pickle
 import random
-
-import time
+import torch
+from collections import deque
+from os import path
+from model import Linear_QNet, QTrainer
+import ploter
 
 # init pygame
 pygame.init()
@@ -63,30 +65,105 @@ CROSS_COLOR = (66, 66, 66)
 SELECTING_COLOR = (237, 191, 33)
 
 # game speed
-SPEED = 200
+SPEED = 500
 
+# Machine learning constant
+MAX_MEMORY = 100_000
+BATCH_SIZE = 1000
+LR = 0.001
+
+DEVICE = 'cuda'
+
+# AI player class
 class Player:
   def __init__(self, name, exp_rate=0.3):
+    # define player name
     self.name = name
-    self.states = []  # record all states taken
-    self.lr = 0.2
-    self.exp_rate = exp_rate
-    self.decay_gamma = 0.9
-    self.states_value = {}  # state -> value
 
-  def getHash(self, board):
-    boardHash = ''
+    # record all states taken
+    self.states = [] 
+
+    # learning rate
+    self.lr = 0.2
+
+    # balance exploration and exploitation -> discover new thing
+    self.exp_rate = exp_rate
+
+    # gamma
+    self.decay_gamma = 0.9
+
+    # store data
+    self.memory = deque(maxlen=MAX_MEMORY)
+
+    # convert state to value
+    self.states_value = {}
+
+    # check model already exists
+    if path.exists('model_' + str(self.name) + '.pth'):
+      self.model = Linear_QNet(28, 45)
+
+      file_name = 'model_' + str(self.name) + '.pth'
+      model_folder_path = './model'
+      file_name = path.join(model_folder_path, file_name)
+
+      self.model.load_state_dict(torch.load(file_name))
+      self.model.eval()
+
+      self.model = self.model.to(DEVICE)
+      print('Loaded last model: ', file_name)
+    else:
+      self.model = Linear_QNet(28, 45)
+      self.model = self.model.to(DEVICE)
+
+    # define trainer
+    self.trainer = QTrainer(self.model, lr=LR, gamma=self.decay_gamma)
+
+  # convert table and deck in to 1 line string
+  def getState(self, board, deck, symbol):
+    state = []
 
     for i in range(3):
       for j in range(3):
-        boardHash += str(board[i][j][0])
-        boardHash += str(board[i][j][1])
+        if str(board[i][j][0]) == symbol:
+          state.append(1)
+        elif str(board[i][j][0]) == symbol % 2 + 1:
+          state.append(-1)
+        else:
+          state.append(0)
+        
+        state.append(int(board[i][j][1]))
 
-    return boardHash
+    for d in deck[symbol]:
+      state.append(d)
 
-  def chooseAction(self, current_board, avaible_size, symbol):
+    for d in deck[symbol % 2 + 1]:
+      state.append(d)
+
+    return np.array(state, dtype=int)
+
+  # remember state
+  def remember(self, state, action, reward, next_state, done):
+    self.memory.append((state, action, reward, next_state, done))
+
+  # train to long memory
+  def train_long_memory(self):
+    if len(self.memory) > BATCH_SIZE:
+        mini_sample = random.sample(self.memory, BATCH_SIZE)  # list of tuples
+    else:
+        mini_sample = self.memory
+
+    states, actions, rewards, next_states, dones = zip(*mini_sample)
+    self.trainer.train_step(states, actions, rewards, next_states, dones)
+
+  # add short memory
+  def train_short_memory(self, state, action, reward, next_state, done):
+    self.trainer.train_step(state, action, reward, next_state, done)
+
+  # thinking the action to do
+  def chooseAction(self, current_board, avaible_size, symbol, state):
     available_positions = {}
 
+    # finding available position and size
     for i in range(3):
       for j in range(3):
         if current_board[i][j][0] != symbol:
@@ -98,78 +175,52 @@ class Player:
           if len(avaible_size_list) > 0:
             available_positions[3*i + j] = avaible_size_list
 
+    # choose between prediction and discover new thing
     if np.random.uniform(0, 1) <= self.exp_rate:
       # take random action
       random_position = random.choice(list(available_positions.keys()))
       random_size = available_positions[random_position]
       random_size_index = np.random.choice(len(random_size))
-      action = [random_position, random_size[random_size_index]]
-      # print(action)
+
+      raw_best_choice = (random_size[random_size_index] - 1) * 9 + random_position
+
+      action = [random_position, random_size[random_size_index], raw_best_choice]
     else:
-      value_max = -999
-      # print(available_positions)
-      for p in available_positions:
-        for s in available_positions[p]:
-          next_board = current_board.copy()
-          next_board[p // 3][p % 3][0] = symbol
-          next_board[p // 3][p % 3][1] = s
-          next_boardHash = self.getHash(next_board)
-          value = 0 if self.states_value.get(next_boardHash) is None else self.states_value.get(next_boardHash)
-          if value >= value_max:
-              value_max = value
-              action = [p, s]
-              # print(action)
+      state0 = torch.tensor(state, dtype=torch.float).to('cuda')
+      prediction = self.model(state0)
+      best_choice = torch.argmax(prediction).to('cuda').item()
+
+      size = best_choice // 9
+      position = best_choice % 9 
+
+      action = [position, size + 1, best_choice]
     
     return action
 
-  # append a hash state
-  def addState(self, state):
-    self.states.append(state)
-
-  # at the end of game, backpropagate and update states value
-  def feedReward(self, reward):
-    for st in reversed(self.states):
-      if self.states_value.get(st) is None:
-        self.states_value[st] = 0
-      self.states_value[st] += self.lr * (self.decay_gamma * reward - self.states_value[st])
-      reward = self.states_value[st]
-
-  def reset(self):
-    self.states = []
-
+  # save trained model
   def saveModel(self):
-    fw = open('model_' + str(self.name), 'wb')
-    pickle.dump(self.states_value, fw)
-    fw.close()
+    file_name = 'model_' + str(self.name) + '.pth'
+    model_folder_path = './model'
+    file_name = path.join(model_folder_path, file_name)
+    torch.save(self.model.state_dict(), file_name)
 
-  def loadModel(self, file):
-    fr = open(file, 'rb')
-    self.states_value = pickle.load(fr)
-    fr.close()
+  # load trained model
+  def loadModel(self, filename):
+    self.model = Linear_QNet(28, 45)
 
+    self.model.load_state_dict(torch.load(filename))
+    self.model.eval()
 
+    self.model = self.model.to(DEVICE)
+    print('Loaded last model: ', filename)
+
+# Human player class
 class HumanPlayer:
-    def __init__(self, name):
-        self.name = name
+  def __init__(self, name):
+    # define player name
+    self.name = name
 
-    def chooseAction(self, positions):
-        while True:
-            row = int(input("Input your action row:"))
-            col = int(input("Input your action col:"))
-            action = (row, col)
-            if action in positions:
-                return action
-
-    # append a hash state
-    def addState(self, state):
-        pass
-
-    # at the end of game, backpropagate and update states value
-    def feedReward(self, reward):
-        pass
-
-    def reset(self):
-        pass
+# Game class
 class TicTacToeGameAI:
   def __init__(self, player1, player2):
     # setup display
@@ -192,9 +243,21 @@ class TicTacToeGameAI:
     self.player1 = player1
     self.player2 = player2
 
+    # statistic
     self.player1_win = 0
     self.player2_win = 0
+    self.player1_deckout = 0
+    self.player2_deckout = 0
     self.draw = 0
+
+    self.statistic = {
+      "round": [],
+      "player1_win": [],
+      "player2_win": [],
+      "draw": [],
+      "player1_deckout": [],
+      "player2_deckout": [],
+    }
 
     # setup turn 1 for O
     self.player = 1
@@ -232,6 +295,7 @@ class TicTacToeGameAI:
     pygame.draw.line( self.screen, LINE_COLOR, (SQUARE_SIZE, SQUARE_SIZE), (SQUARE_SIZE, HEIGHT - SQUARE_SIZE), LINE_WIDTH )
     pygame.draw.line( self.screen, LINE_COLOR, (2 * SQUARE_SIZE, SQUARE_SIZE), (2 * SQUARE_SIZE, HEIGHT - SQUARE_SIZE), LINE_WIDTH )
 
+  # draw deck in game
   def draw_deck(self):
     if self.player == 1:
       x_row = 0
@@ -293,14 +357,18 @@ class TicTacToeGameAI:
 
   # store player mark in array
   def place_mark(self, row, col):
-    self.board[row][col][0] = self.player
-    self.board[row][col][1] = self.selecting_size
-    self.deck[self.player][self.selecting_size - 1] = 0
+    if self.check_available(row, col):
+      self.board[row][col][0] = self.player
+      self.board[row][col][1] = self.selecting_size
+      self.deck[self.player][self.selecting_size - 1] = 0
+      return True
+    return False
 
   # check this block is available? 
   def check_available(self, row, col):
-    return self.board[row][col][0] != self.player and self.board[row][col][1] < self.selecting_size
+    return self.board[row][col][0] != self.player and self.board[row][col][1] < self.selecting_size and self.deck[self.player][self.selecting_size - 1] == 1
 
+  # get avaible size in deck
   def get_available_size(self):
     avaible_size = []
     for i in range(5):
@@ -319,18 +387,30 @@ class TicTacToeGameAI:
 
   # check deck is out
   def is_deck_empty(self):
-    return self.deck[1] == [0, 0, 0, 0, 0] and self.deck[2] == [0, 0, 0, 0, 0]
+    return self.deck[self.player] == [0, 0, 0, 0, 0]
 
   # get board hash
-  def getHash(self):
-    boardHash = ''
+  def getState(self):
+    state = []
 
     for i in range(3):
       for j in range(3):
-        boardHash += str(self.board[i][j][0])
-        boardHash += str(self.board[i][j][1])
+        if str(self.board[i][j][0]) == self.player:
+          state.append(1)
+        elif str(self.board[i][j][0]) == self.player % 2 + 1:
+          state.append(-1)
+        else:
+          state.append(0)
 
-    return boardHash
+        state.append(int(self.board[i][j][1]))
+
+    for d in self.deck[self.player]:
+      state.append(d)
+
+    for d in self.deck[self.player % 2 + 1]:
+      state.append(d)
+
+    return np.array(state, dtype=int)
 
   # check win
   def check_win(self):
@@ -427,106 +507,346 @@ class TicTacToeGameAI:
     # selecting size
     self.selecting_size = 0
 
-  def giveReward(self, player):
-    if player == 0:
-      self.player1.feedReward(0.5)
-      self.player2.feedReward(0.5)
-    elif player == 1:
-      self.player1.feedReward(1)
-      self.player2.feedReward(0)
-    elif player == 2:
-      self.player1.feedReward(0)
-      self.player2.feedReward(1)
-
   # play step for ai vs ai
-  def play1(self, rounds=100):
+  def train(self, rounds=100):
     for i in range(rounds):
       pygame.event.pump()
 
       print(f"Round {i}")
 
+      # plot status
+      ploter.plot(self.statistic)
+
+      # add statistic
+      self.statistic["round"].append(i)
+      self.statistic["player1_win"].append(self.player1_win)
+      self.statistic["player2_win"].append(self.player2_win)
+      self.statistic["draw"].append(self.draw)
+      self.statistic["player1_deckout"].append(self.player1_deckout)
+      self.statistic["player2_deckout"].append(self.player2_deckout)
+
       while not self.game_over:
-        # player 1 turn
-        player1_action = self.player1.chooseAction(self.board, self.get_available_size(), self.player)
+        # get state
+        state_old = self.getState()
 
-        self.selecting_size = player1_action[1]
+        # check player 1 out of deck
+        if self.is_deck_empty():
+          print("Player 1 Out of deck")
+          self.player1_deckout += 1
 
-        mark_row = player1_action[0] // 3
-        mark_col = player1_action[0] % 3
+          # train short memory
+          self.player1.train_short_memory(state_old, player1_action[2], -1, state_new, True)
+          self.player2.train_short_memory(state_old, player2_action[2], 2, state_new, True)
 
-        # place mark
-        self.place_mark( mark_row, mark_col )
+          # remember
+          self.player1.remember(state_old, player1_action[2], -1, state_new, True)
+          self.player2.remember(state_old, player2_action[2], 2, state_new, True)
+
+          self.game_over = True
+
+        # place mark when avialable
+        while True:
+          # player 1 turn
+          player1_action = self.player1.chooseAction(self.board, self.get_available_size(), self.player, state_old)
+
+          self.selecting_size = player1_action[1]
+
+          mark_row = player1_action[0] // 3
+          mark_col = player1_action[0] % 3
+
+          if self.place_mark( mark_row, mark_col ):
+            break
 
         # draw mark
         self.draw_mark()
 
-        board_hash = self.getHash()
-        self.player1.addState(board_hash)
+        # get new state after place mark
+        state_new = self.getState()
 
-        # check win
+        # check player 1 win
         if self.check_win():
           print("Player 1 (O) win")
           self.player1_win += 1
-          self.giveReward(self.player)
-          self.player1.reset()
-          self.player2.reset()
+
+          # train short memory
+          self.player1.train_short_memory(state_old, player1_action[2], 2, state_new, True)
+          self.player2.train_short_memory(state_old, player2_action[2], -1, state_new, True)
+
+          # remember
+          self.player1.remember(state_old, player1_action[2], 2, state_new, True)
+          self.player2.remember(state_old, player2_action[2], -1, state_new, True)
+
           self.game_over = True
         # draw
-        elif self.is_board_full() or self.is_deck_empty():
+        elif self.is_board_full():
           print("Draw")
           self.draw += 1
-          self.giveReward(0)
-          self.player1.reset()
-          self.player2.reset()
+
+          # train short memory
+          self.player1.train_short_memory(state_old, player1_action[2], 0, state_new, True)
+          self.player2.train_short_memory(state_old, player2_action[2], 0, state_new, True)
+
+          # remember
+          self.player1.remember(state_old, player1_action[2], 0, state_new, True)
+          self.player2.remember(state_old, player2_action[2], 0, state_new, True)
+
           self.game_over = True
         else:
+          # train short memory
+          self.player1.train_short_memory(state_old, player1_action[2], 1, state_new, False)
+
+          # remember
+          self.player1.remember(state_old, player1_action[2], 1, state_new, False)
+
+          # get state
+          state_old = self.getState()
+
           # Player 2 turn
           self.player = self.player % 2 + 1
 
-          player2_action = self.player2.chooseAction(self.board, self.get_available_size(), self.player)
+          # check player 2 out of deck
+          if self.is_deck_empty():
+            print("Player 2 Out of deck, Player 1 win")
+            self.player2_deckout += 1
 
-          self.selecting_size = player2_action[1]
+            # train short memory
+            self.player1.train_short_memory(state_old, player1_action[2], 2, state_new, True)
+            self.player2.train_short_memory(state_old, player2_action[2], -1, state_new, True)
 
-          mark_row = player2_action[0] // 3
-          mark_col = player2_action[0] % 3
+            # remember
+            self.player1.remember(state_old, player1_action[2], 2, state_new, True)
+            self.player2.remember(state_old, player2_action[2], -1, state_new, True)
 
-          # place mark
-          self.place_mark( mark_row, mark_col )
+            self.game_over = True
+
+          # place mark when avialable
+          while True:
+            player2_action = self.player2.chooseAction(self.board, self.get_available_size(), self.player, state_old)
+
+            self.selecting_size = player2_action[1]
+
+            mark_row = player2_action[0] // 3
+            mark_col = player2_action[0] % 3
+
+            if self.place_mark( mark_row, mark_col ):
+              break
 
           # draw mark
           self.draw_mark()
 
-          board_hash = self.getHash()
-          self.player2.addState(board_hash)
+          # get new state after place mark
+          state_new = self.getState()
 
           # check win
           if self.check_win():
             print("Player 2 (X) win")
             self.player2_win += 1
-            self.giveReward(self.player)
-            self.player1.reset()
-            self.player2.reset()
+
+            # train short memory
+            self.player1.train_short_memory(state_old, player1_action[2], -1, state_new, True)
+            self.player2.train_short_memory(state_old, player2_action[2], 2, state_new, True)
+
+            # remember
+            self.player1.remember(state_old, player1_action[2], -1, state_new, True)
+            self.player2.remember(state_old, player2_action[2], 2, state_new, True)
+          
             self.game_over = True
           # draw
           elif self.is_board_full() or self.is_deck_empty():
             print("Draw")
             self.draw += 1
-            self.giveReward(0)
-            self.player1.reset()
-            self.player2.reset()
+
+            # train short memory
+            self.player1.train_short_memory(state_old, player1_action[2], 0, state_new, True)
+            self.player2.train_short_memory(state_old, player2_action[2], 0, state_new, True)
+
+            # remember
+            self.player1.remember(state_old, player1_action[2], 0, state_new, True)
+            self.player2.remember(state_old, player2_action[2], 0, state_new, True)
+
             self.game_over = True
-          
+
+          # train short memory
+          self.player2.train_short_memory(state_old, player2_action[2], 1, state_new, False)
+
+          # remember
+          self.player2.remember(state_old, player2_action[2], 1, state_new, False)
+
+          # switch to player 1 turn
+          self.player = self.player % 2 + 1
         
         self.reset_screen()
         self.selecting_size = 0
 
+        # update screen
         pygame.display.update()
         self.clock.tick(SPEED)
-
+      
+      # restart game after game end
       self.restart()
 
     print(f"Player 1 win : {self.player1_win}, Player 2 win : {self.player2_win}, Draw : {self.draw}")
     self.player1.saveModel()
     self.player2.saveModel()
 
+    # save latest result
+    ploter.plot(self.statistic, True)
+
+  def play(self):
+    while not self.game_over:
+      # player 1 turn
+      print('AI turn')
+
+      # get state
+      state_old = self.getState()
+
+      # place mark
+      while True:
+        # player 1 turn
+        player1_action = self.player1.chooseAction(self.board, self.get_available_size(), self.player, state_old)
+
+        self.selecting_size = player1_action[1]
+
+        mark_row = player1_action[0] // 3
+        mark_col = player1_action[0] % 3
+
+        if self.place_mark( mark_row, mark_col ):
+          break
+
+      # draw mark
+      self.draw_mark()
+
+      # check win
+      if self.check_win():
+        print("Player 1 (O) win")
+        self.player1_win += 1
+        self.game_over = True
+        print("AI will conquer the world")
+        pygame.display.update()
+      # draw
+      elif self.is_board_full() or self.is_deck_empty():
+        print("Draw")
+        self.draw += 1
+        self.game_over = True
+      else:
+        # Player 2 turn
+        print('Human turn')
+
+        self.player = self.player % 2 + 1
+
+        self.reset_screen()
+        pygame.display.update()
+
+        player2_done = False
+
+        while not player2_done:
+          pygame.display.update()
+
+          for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+              sys.exit()
+
+            # get mark position
+            if event.type == pygame.MOUSEBUTTONDOWN and not self.game_over:
+
+              mouseX = event.pos[0] 
+              mouseY = event.pos[1] 
+
+              # mouse position to row,col
+              clicked_row = int(mouseY // SQUARE_SIZE)
+              # clicked_col = int(mouseX // SQUARE_SIZE)
+
+              # opponent side click
+              if (clicked_row == 0):
+                print('Opponent side')
+              # our side click
+              elif (clicked_row == 4):
+                for i in range(0, 5):
+                  if self.center_x_list[i] - int( CIRCLE_RADIUS[ i + 1 ] // 2 ) - int( CIRCLE_WIDTH[ i + 1 ] // 2 ) < mouseX and mouseX < self.center_x_list[i] + int( CIRCLE_RADIUS[ i + 1 ] // 2 ) + int( CIRCLE_WIDTH[ i + 1 ] // 2 ):
+                    # set selecting size
+                    self.selecting_size = i + 1
+                    
+                    # check size is available
+                    if self.deck[self.player][self.selecting_size - 1] == 1:
+                      # reset screen
+                      self.reset_screen()
+
+                      # draw size indicator
+                      self.draw_selecting_size(i)
+
+                      break
+                    else:
+                      print("This size is used")
+
+                      break
+              # click in table
+              else:
+                clicked_col = int(mouseX // SQUARE_SIZE)
+
+                # check markable
+                if self.check_available( clicked_row - 1, clicked_col ):
+                  
+                  # place mark
+                  self.place_mark( clicked_row - 1, clicked_col )
+
+                  # draw mark
+                  self.draw_mark()
+
+                  # check win
+                  if self.check_win():
+                    print("Player 2 (X) win")
+                    self.player2_win += 1
+                    self.game_over = True
+                  # check draw
+                  elif self.is_board_full() or self.is_deck_empty():
+                    print("draw")
+                    self.draw += 1
+                    self.game_over = True
+                  else:
+                    # switch side
+                    self.player = self.player % 2 + 1
+
+                    # reset screen
+                    self.reset_screen()
+
+                    # reset size
+                    self.selecting_size = 0
+
+                    # player 2 is done
+                    player2_done = True
+
+            if event.type == pygame.KEYDOWN:
+              # restart game
+              if event.key == pygame.K_r:
+                print("Restarting game")
+                self.restart()
+                player2_done = True
+              # quiet game
+              if event.key == pygame.K_q:
+                print("Quiet game")
+                self.player1.saveModel()
+                # print(self.player2.states_value)
+                pygame.quit()
+                quit()
+      
+      # self.reset_screen()
+      self.selecting_size = 0
+  
+      pygame.display.update()
+
+    for event in pygame.event.get():
+      if event.type == pygame.QUIT:
+        sys.exit()
+
+      if event.type == pygame.KEYDOWN:
+        # restart game
+        if event.key == pygame.K_r:
+          print("Restarting game")
+          self.restart()
+        # quiet game
+        if event.key == pygame.K_q:
+          print("Quiet game")
+          self.player1.saveModel()
+          pygame.quit()
+          quit()
     

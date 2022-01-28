@@ -47,8 +47,8 @@ conda create --name <env> --file requirements.txt
 
   - Result
 
-  ![alt text](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/orginal01.png?raw=true)
-  ![alt text](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/orginal02.png?raw=true)
+  ![alt text](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/original01.png?raw=true)
+  ![alt text](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/original02.png?raw=true)
 
 - For Beyond Tic Tac Toe (Human vs Human)
 

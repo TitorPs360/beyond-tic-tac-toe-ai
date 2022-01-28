@@ -21,13 +21,7 @@ class Linear_QNet(nn.Module):
         x = F.relu(self.linear2(x))
         x = F.relu(self.linear3(x))
         x = self.linear4(x)
-
-        # x = F.relu(self.bn2(self.conv2(x)))
-        # x = F.relu(self.bn3(self.conv3(x)))
-        # return self.head(x.view(x.size(0), -1))
-
-        # x = F.relu(self.linear1(x))
-        # x = self.linear2(x)
+        
         return x
 
     def save(self, file_name='model.pth'):
@@ -70,9 +64,6 @@ class QTrainer:
                 Q_new = reward[idx] + self.gamma * torch.max(self.model(next_state[idx])).to(DEVICE)
 
             target[idx][action[idx]] = Q_new
-
-            # position = torch.argmax(prediction[:9]).to('cuda').item()
-            # size = torch.argmax(prediction[9:]).to('cuda').item()
 
         self.optimizer.zero_grad()
         loss = self.criterion(target, pred)

@@ -754,7 +754,6 @@ class TicTacToeGameAI:
 
               # mouse position to row,col
               clicked_row = int(mouseY // SQUARE_SIZE)
-              # clicked_col = int(mouseX // SQUARE_SIZE)
 
               # opponent side click
               if (clicked_row == 0):
@@ -825,11 +824,9 @@ class TicTacToeGameAI:
               if event.key == pygame.K_q:
                 print("Quiet game")
                 self.player1.saveModel()
-                # print(self.player2.states_value)
                 pygame.quit()
                 quit()
       
-      # self.reset_screen()
       self.selecting_size = 0
   
       pygame.display.update()

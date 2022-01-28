@@ -9,4 +9,3 @@ if __name__ == '__main__':
 
   print("Training AI vs AI")
   Game.train(500000)
-  # Game.play1(100000)

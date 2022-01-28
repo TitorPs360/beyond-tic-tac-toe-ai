@@ -102,7 +102,6 @@ conda create --name <env> --file requirements.txt
 
 ## Training Result
 
-| Text | Graph |
-| :--: | :---: |
-
+|                                                        Text                                                         |                                                         Graph                                                         |
+| :-----------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------: |
 | ![Start Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/training_result01.png?raw=true) | ![Playing Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/training_result02.png?raw=true) |

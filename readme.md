@@ -99,3 +99,10 @@ conda create --name <env> --file requirements.txt
     ![Play with AI](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/playwithai.png?raw=true)
 
 4. Enjoy your Tic Tac Toe
+
+## Training Result
+
+| Text | Graph |
+| :--: | :---: |
+
+| ![Start Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/training_result01.png?raw=true) | ![Playing Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/training_result02.png?raw=true) |

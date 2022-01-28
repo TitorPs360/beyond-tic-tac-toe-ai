@@ -47,8 +47,9 @@ conda create --name <env> --file requirements.txt
 
   - Result
 
-  ![alt text](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/original01.png?raw=true)
-  ![alt text](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/original02.png?raw=true)
+  |                                                  Start Game                                                  |                                                  Playing Game                                                  |
+  | :----------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------: |
+  | ![Start Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/original01.png?raw=true) | ![Playing Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/original02.png?raw=true) |
 
 - For Beyond Tic Tac Toe (Human vs Human)
 
@@ -60,8 +61,9 @@ conda create --name <env> --file requirements.txt
 
   - Result
 
-  ![alt text](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/beyond01.png?raw=true)
-  ![alt text](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/beyond02.png?raw=true)
+    |                                                 Start Game                                                 |                                                 Playing Game                                                 |
+    | :--------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------: |
+    | ![Start Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/beyond01.png?raw=true) | ![Playing Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/beyond02.png?raw=true) |
 
 - For Training AI (AI vs AI)
 
@@ -73,7 +75,7 @@ conda create --name <env> --file requirements.txt
 
   - Result
 
-  ![alt text](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/training.png?raw=true)
+  ![Training](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/training.png?raw=true)
 
 - For Beyond Tic Tac Toe (AI vs Human)
 
@@ -85,6 +87,6 @@ conda create --name <env> --file requirements.txt
 
   - Result
 
-  ![alt text](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/playwithai.png?raw=true)
+  ![Play with AI](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/playwithai.png?raw=true)
 
 4. Enjoy your Tic Tac Toe

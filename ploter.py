@@ -27,5 +27,5 @@ def plot(statistic, save=False):
     plt.show(block=False)
 
     if save:
-        plt.savefig('result.png')
+        plt.savefig('./fig/result.png')
     # plt.pause(.1)

@@ -35,58 +35,67 @@ conda create --name <env> --file requirements.txt
    conda activate <env>
    ```
 
-3. Run script
+3. How to play
 
-- For Traditional Tic Tac Toe
+- Basic Controller
+  Key | Control
+  --- | -------
+  Left Click | Place Mark
+  Q | Quiet Game
+  R | Restart Game
 
-  - Script
+- Run Game
 
-  ```
-  python traditional_game.py
-  ```
+  - For Traditional Tic Tac Toe
 
-  - Result
+    - Script
 
-  |                                                  Start Game                                                  |                                                  Playing Game                                                  |
-  | :----------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------: |
-  | ![Start Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/original01.png?raw=true) | ![Playing Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/original02.png?raw=true) |
+    ```
+    python traditional_game.py
+    ```
 
-- For Beyond Tic Tac Toe (Human vs Human)
+    - Result
 
-  - Script
+    |                                                  Start Game                                                  |                                                  Playing Game                                                  |
+    | :----------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------: |
+    | ![Start Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/original01.png?raw=true) | ![Playing Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/original02.png?raw=true) |
 
-  ```
-  python beyond_game.py
-  ```
+  - For Beyond Tic Tac Toe (Human vs Human)
 
-  - Result
+    - Script
 
-    |                                                 Start Game                                                 |                                                 Playing Game                                                 |
-    | :--------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------: |
-    | ![Start Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/beyond01.png?raw=true) | ![Playing Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/beyond02.png?raw=true) |
+    ```
+    python beyond_game.py
+    ```
 
-- For Training AI (AI vs AI)
+    - Result
 
-  - Script
+      |                                                 Start Game                                                 |                                                 Playing Game                                                 |
+      | :--------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------: |
+      | ![Start Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/beyond01.png?raw=true) | ![Playing Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/beyond02.png?raw=true) |
 
-  ```
-  python training.py
-  ```
+  - For Training AI (AI vs AI)
 
-  - Result
+    - Script
 
-  ![Training](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/training.png?raw=true)
+    ```
+    python training.py
+    ```
 
-- For Beyond Tic Tac Toe (AI vs Human)
+    - Result
 
-  - Script
+    ![Training](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/training.png?raw=true)
 
-  ```
-  python ai_vs_human.py
-  ```
+  - For Beyond Tic Tac Toe (AI vs Human)
 
-  - Result
+    - Script
 
-  ![Play with AI](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/playwithai.png?raw=true)
+    ```
+    python ai_vs_human.py
+    ```
+
+    - Result
+
+    ![Play with AI](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/playwithai.png?raw=true)
 
 4. Enjoy your Tic Tac Toe

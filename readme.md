@@ -91,7 +91,7 @@ conda create --name <env> --file requirements.txt
     - Script
 
     ```
-    python ai_vs_human.py
+    python play_with_ai.py
     ```
 
     - Result

@@ -119,27 +119,27 @@ class Player:
     self.trainer = QTrainer(self.model, lr=LR, gamma=self.decay_gamma)
 
   # convert table and deck in to 1 line string
-  def getState(self, board, deck, symbol):
-    state = []
+  # def getState(self, board, deck, symbol):
+  #   state = []
 
-    for i in range(3):
-      for j in range(3):
-        if str(board[i][j][0]) == symbol:
-          state.append(1)
-        elif str(board[i][j][0]) == symbol % 2 + 1:
-          state.append(-1)
-        else:
-          state.append(0)
+  #   for i in range(3):
+  #     for j in range(3):
+  #       if str(board[i][j][0]) == symbol:
+  #         state.append(1)
+  #       elif str(board[i][j][0]) == symbol % 2 + 1:
+  #         state.append(-1)
+  #       else:
+  #         state.append(0)
         
-        state.append(int(board[i][j][1]))
+  #       state.append(int(board[i][j][1]))
 
-    for d in deck[symbol]:
-      state.append(d)
+  #   for d in deck[symbol]:
+  #     state.append(d)
 
-    for d in deck[symbol % 2 + 1]:
-      state.append(d)
+  #   for d in deck[symbol % 2 + 1]:
+  #     state.append(d)
 
-    return np.array(state, dtype=int)
+  #   return np.array(state, dtype=int)
 
   # remember state
   def remember(self, state, action, reward, next_state, done):
@@ -390,25 +390,27 @@ class TicTacToeGameAI:
     return self.deck[self.player] == [0, 0, 0, 0, 0]
 
   # get board hash
-  def getState(self):
+  def getState(self, player):
     state = []
 
     for i in range(3):
       for j in range(3):
-        if str(self.board[i][j][0]) == self.player:
+        if self.board[i][j][0] == player:
           state.append(1)
-        elif str(self.board[i][j][0]) == self.player % 2 + 1:
+        elif self.board[i][j][0] == player:
           state.append(-1)
         else:
           state.append(0)
 
-        state.append(int(self.board[i][j][1]))
+        state.append(int(self.board[i][j][1]) / 5)
 
-    for d in self.deck[self.player]:
+    for d in self.deck[player]:
       state.append(d)
 
-    for d in self.deck[self.player % 2 + 1]:
+    for d in self.deck[player]:
       state.append(d)
+
+    # print(state)
 
     return np.array(state, dtype=int)
 
@@ -527,7 +529,8 @@ class TicTacToeGameAI:
 
       while not self.game_over:
         # get state
-        state_old = self.getState()
+        state_old_1 = self.getState(1)
+        state_old_2 = self.getState(2)
 
         # check player 1 out of deck
         if self.is_deck_empty():
@@ -535,19 +538,19 @@ class TicTacToeGameAI:
           self.player1_deckout += 1
 
           # train short memory
-          self.player1.train_short_memory(state_old, player1_action[2], -1, state_new, True)
-          self.player2.train_short_memory(state_old, player2_action[2], 2, state_new, True)
+          self.player1.train_short_memory(state_old_1, player1_action[2], -1, state_new_1, True)
+          self.player2.train_short_memory(state_old_2, player2_action[2], 2, state_new_2, True)
 
           # remember
-          self.player1.remember(state_old, player1_action[2], -1, state_new, True)
-          self.player2.remember(state_old, player2_action[2], 2, state_new, True)
+          self.player1.remember(state_old_1, player1_action[2], -1, state_new_1, True)
+          self.player2.remember(state_old_2, player2_action[2], 2, state_new_2, True)
 
           self.game_over = True
 
         # place mark when avialable
         while True:
           # player 1 turn
-          player1_action = self.player1.chooseAction(self.board, self.get_available_size(), self.player, state_old)
+          player1_action = self.player1.chooseAction(self.board, self.get_available_size(), self.player, state_old_1)
 
           self.selecting_size = player1_action[1]
 
@@ -561,7 +564,8 @@ class TicTacToeGameAI:
         self.draw_mark()
 
         # get new state after place mark
-        state_new = self.getState()
+        state_new_1 = self.getState(1)
+        state_new_2 = self.getState(2)
 
         # check player 1 win
         if self.check_win():
@@ -569,12 +573,12 @@ class TicTacToeGameAI:
           self.player1_win += 1
 
           # train short memory
-          self.player1.train_short_memory(state_old, player1_action[2], 2, state_new, True)
-          self.player2.train_short_memory(state_old, player2_action[2], -1, state_new, True)
+          self.player1.train_short_memory(state_new_1, player1_action[2], 1, state_new_1, True)
+          self.player2.train_short_memory(state_new_2, player2_action[2], -1, state_new_2, True)
 
           # remember
-          self.player1.remember(state_old, player1_action[2], 2, state_new, True)
-          self.player2.remember(state_old, player2_action[2], -1, state_new, True)
+          self.player1.remember(state_new_1, player1_action[2], 1, state_new_1, True)
+          self.player2.remember(state_new_2, player2_action[2], -1, state_new_2, True)
 
           self.game_over = True
         # draw
@@ -583,23 +587,24 @@ class TicTacToeGameAI:
           self.draw += 1
 
           # train short memory
-          self.player1.train_short_memory(state_old, player1_action[2], 0, state_new, True)
-          self.player2.train_short_memory(state_old, player2_action[2], 0, state_new, True)
+          self.player1.train_short_memory(state_old_1, player1_action[2], 0.5, state_new_1, True)
+          self.player2.train_short_memory(state_old_2, player2_action[2], 0.5, state_new_2, True)
 
           # remember
-          self.player1.remember(state_old, player1_action[2], 0, state_new, True)
-          self.player2.remember(state_old, player2_action[2], 0, state_new, True)
+          self.player1.remember(state_old_1, player1_action[2], 0.5, state_new_1, True)
+          self.player2.remember(state_old_2, player2_action[2], 0.5, state_new_2, True)
 
           self.game_over = True
         else:
           # train short memory
-          self.player1.train_short_memory(state_old, player1_action[2], 1, state_new, False)
+          self.player1.train_short_memory(state_old_1, player1_action[2], 0, state_new_1, False)
 
           # remember
-          self.player1.remember(state_old, player1_action[2], 1, state_new, False)
+          self.player1.remember(state_old_1, player1_action[2], 0, state_new_1, False)
 
           # get state
-          state_old = self.getState()
+          state_old_1 = self.getState(1)
+          state_old_2 = self.getState(2)
 
           # Player 2 turn
           self.player = self.player % 2 + 1
@@ -610,18 +615,18 @@ class TicTacToeGameAI:
             self.player2_deckout += 1
 
             # train short memory
-            self.player1.train_short_memory(state_old, player1_action[2], 2, state_new, True)
-            self.player2.train_short_memory(state_old, player2_action[2], -1, state_new, True)
+            self.player1.train_short_memory(state_old_1, player1_action[2], 1, state_new_1, True)
+            self.player2.train_short_memory(state_old_2, player2_action[2], -1, state_new_2, True)
 
             # remember
-            self.player1.remember(state_old, player1_action[2], 2, state_new, True)
-            self.player2.remember(state_old, player2_action[2], -1, state_new, True)
+            self.player1.remember(state_old_1, player1_action[2], 1, state_new_1, True)
+            self.player2.remember(state_old_2, player2_action[2], -1, state_new_2, True)
 
             self.game_over = True
 
           # place mark when avialable
           while True:
-            player2_action = self.player2.chooseAction(self.board, self.get_available_size(), self.player, state_old)
+            player2_action = self.player2.chooseAction(self.board, self.get_available_size(), self.player, state_old_2)
 
             self.selecting_size = player2_action[1]
 
@@ -635,7 +640,8 @@ class TicTacToeGameAI:
           self.draw_mark()
 
           # get new state after place mark
-          state_new = self.getState()
+          state_new_1 = self.getState(1)
+          state_new_2 = self.getState(2)
 
           # check win
           if self.check_win():
@@ -643,12 +649,12 @@ class TicTacToeGameAI:
             self.player2_win += 1
 
             # train short memory
-            self.player1.train_short_memory(state_old, player1_action[2], -1, state_new, True)
-            self.player2.train_short_memory(state_old, player2_action[2], 2, state_new, True)
+            self.player1.train_short_memory(state_old_1, player1_action[2], -1, state_new_1, True)
+            self.player2.train_short_memory(state_old_2, player2_action[2], 1, state_new_2, True)
 
             # remember
-            self.player1.remember(state_old, player1_action[2], -1, state_new, True)
-            self.player2.remember(state_old, player2_action[2], 2, state_new, True)
+            self.player1.remember(state_old_1, player1_action[2], -1, state_new_1, True)
+            self.player2.remember(state_old_2, player2_action[2], 1, state_new_2, True)
           
             self.game_over = True
           # draw
@@ -657,20 +663,20 @@ class TicTacToeGameAI:
             self.draw += 1
 
             # train short memory
-            self.player1.train_short_memory(state_old, player1_action[2], 0, state_new, True)
-            self.player2.train_short_memory(state_old, player2_action[2], 0, state_new, True)
+            self.player1.train_short_memory(state_old_1, player1_action[2], 0.5, state_new_1, True)
+            self.player2.train_short_memory(state_old_2, player2_action[2], 0.5, state_new_2, True)
 
             # remember
-            self.player1.remember(state_old, player1_action[2], 0, state_new, True)
-            self.player2.remember(state_old, player2_action[2], 0, state_new, True)
+            self.player1.remember(state_old_1, player1_action[2], 0.5, state_new_1, True)
+            self.player2.remember(state_old_2, player2_action[2], 0.5, state_new_2, True)
 
             self.game_over = True
 
           # train short memory
-          self.player2.train_short_memory(state_old, player2_action[2], 1, state_new, False)
+          self.player2.train_short_memory(state_old_2, player2_action[2], 0, state_new_2, False)
 
           # remember
-          self.player2.remember(state_old, player2_action[2], 1, state_new, False)
+          self.player2.remember(state_old_2, player2_action[2], 0, state_new_2, False)
 
           # switch to player 1 turn
           self.player = self.player % 2 + 1
@@ -681,7 +687,10 @@ class TicTacToeGameAI:
         # update screen
         pygame.display.update()
         self.clock.tick(SPEED)
-      
+
+      self.player1.train_long_memory()
+      self.player2.train_long_memory()
+
       # restart game after game end
       self.restart()
 

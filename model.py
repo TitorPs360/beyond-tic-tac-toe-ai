@@ -6,21 +6,24 @@ import os
 
 DEVICE = 'cuda'
 
-
 class Linear_QNet(nn.Module):
     def __init__(self, input_size, output_size):
         super().__init__()
-        self.linear1 = nn.Linear(input_size, 64)
-        self.linear2 = nn.Linear(64, 256)
-        self.linear3 = nn.Linear(256, 64)
-        self.linear4 = nn.Linear(64, output_size)
+        self.input_layer = nn.Linear(input_size, 256)
+        self.dl1 = nn.Linear(256, 256)
+        self.output_layer = nn.Linear(256, output_size)
 
     def forward(self, x):
         x = x.to(DEVICE)
-        x = F.relu(self.linear1(x))
-        x = F.relu(self.linear2(x))
-        x = F.relu(self.linear3(x))
-        x = self.linear4(x)
+
+        x = self.input_layer(x)
+        x = torch.relu(x)
+
+        x = self.dl1(x)
+        x = torch.relu(x)
+
+        x = self.output_layer(x)
+        x = torch.sigmoid(x)
         
         return x
 
@@ -65,6 +68,7 @@ class QTrainer:
 
             target[idx][action[idx]] = Q_new
 
+        # backpropagate
         self.optimizer.zero_grad()
         loss = self.criterion(target, pred)
         loss.backward()

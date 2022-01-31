@@ -407,7 +407,7 @@ class TicTacToeGameAI:
     for d in self.deck[player]:
       state.append(d)
 
-    for d in self.deck[player]:
+    for d in self.deck[player % 2 + 1]:
       state.append(d)
 
     # print(state)
@@ -539,11 +539,11 @@ class TicTacToeGameAI:
 
           # train short memory
           self.player1.train_short_memory(state_old_1, player1_action[2], -1, state_new_1, True)
-          self.player2.train_short_memory(state_old_2, player2_action[2], 2, state_new_2, True)
+          self.player2.train_short_memory(state_old_2, player2_action[2], 1, state_new_2, True)
 
           # remember
           self.player1.remember(state_old_1, player1_action[2], -1, state_new_1, True)
-          self.player2.remember(state_old_2, player2_action[2], 2, state_new_2, True)
+          self.player2.remember(state_old_2, player2_action[2], 1, state_new_2, True)
 
           self.game_over = True
 
@@ -573,12 +573,12 @@ class TicTacToeGameAI:
           self.player1_win += 1
 
           # train short memory
-          self.player1.train_short_memory(state_new_1, player1_action[2], 1, state_new_1, True)
-          self.player2.train_short_memory(state_new_2, player2_action[2], -1, state_new_2, True)
+          self.player1.train_short_memory(state_old_1, player1_action[2], 1, state_new_1, True)
+          self.player2.train_short_memory(state_old_2, player2_action[2], -1, state_new_2, True)
 
           # remember
-          self.player1.remember(state_new_1, player1_action[2], 1, state_new_1, True)
-          self.player2.remember(state_new_2, player2_action[2], -1, state_new_2, True)
+          self.player1.remember(state_old_1, player1_action[2], 1, state_new_1, True)
+          self.player2.remember(state_old_2, player2_action[2], -1, state_new_2, True)
 
           self.game_over = True
         # draw
@@ -587,12 +587,12 @@ class TicTacToeGameAI:
           self.draw += 1
 
           # train short memory
-          self.player1.train_short_memory(state_old_1, player1_action[2], 0.5, state_new_1, True)
-          self.player2.train_short_memory(state_old_2, player2_action[2], 0.5, state_new_2, True)
+          self.player1.train_short_memory(state_old_1, player1_action[2], 0, state_new_1, True)
+          self.player2.train_short_memory(state_old_2, player2_action[2], 0, state_new_2, True)
 
           # remember
-          self.player1.remember(state_old_1, player1_action[2], 0.5, state_new_1, True)
-          self.player2.remember(state_old_2, player2_action[2], 0.5, state_new_2, True)
+          self.player1.remember(state_old_1, player1_action[2], 0, state_new_1, True)
+          self.player2.remember(state_old_2, player2_action[2], 0, state_new_2, True)
 
           self.game_over = True
         else:
@@ -663,12 +663,12 @@ class TicTacToeGameAI:
             self.draw += 1
 
             # train short memory
-            self.player1.train_short_memory(state_old_1, player1_action[2], 0.5, state_new_1, True)
-            self.player2.train_short_memory(state_old_2, player2_action[2], 0.5, state_new_2, True)
+            self.player1.train_short_memory(state_old_1, player1_action[2], 0, state_new_1, True)
+            self.player2.train_short_memory(state_old_2, player2_action[2], 0, state_new_2, True)
 
             # remember
-            self.player1.remember(state_old_1, player1_action[2], 0.5, state_new_1, True)
-            self.player2.remember(state_old_2, player2_action[2], 0.5, state_new_2, True)
+            self.player1.remember(state_old_1, player1_action[2], 0, state_new_1, True)
+            self.player2.remember(state_old_2, player2_action[2], 0, state_new_2, True)
 
             self.game_over = True
 
@@ -688,8 +688,9 @@ class TicTacToeGameAI:
         pygame.display.update()
         self.clock.tick(SPEED)
 
-      self.player1.train_long_memory()
-      self.player2.train_long_memory()
+      if i % 100 == 0:
+        self.player1.train_long_memory()
+        self.player2.train_long_memory()
 
       # restart game after game end
       self.restart()
@@ -701,18 +702,132 @@ class TicTacToeGameAI:
     # save latest result
     ploter.plot(self.statistic, True)
 
+  # play step for ai vs ai
+  def test(self, rounds=100):
+    for i in range(rounds):
+      pygame.event.pump()
+
+      print(f"Round {i}")
+
+      while not self.game_over:
+        # get state
+        state_old_1 = self.getState(1)
+        state_old_2 = self.getState(2)
+
+        # check player 1 out of deck
+        if self.is_deck_empty():
+          print("Player 1 Out of deck")
+          self.player1_deckout += 1
+
+          self.game_over = True
+
+        # place mark when avialable
+        while True:
+          # player 1 turn
+          player1_action = self.player1.chooseAction(self.board, self.get_available_size(), self.player, state_old_1)
+
+          self.selecting_size = player1_action[1]
+
+          mark_row = player1_action[0] // 3
+          mark_col = player1_action[0] % 3
+
+          if self.place_mark( mark_row, mark_col ):
+            break
+
+        # draw mark
+        self.draw_mark()
+
+        # get new state after place mark
+        state_new_1 = self.getState(1)
+        state_new_2 = self.getState(2)
+
+        # check player 1 win
+        if self.check_win():
+          print("Player 1 (O) win")
+          self.player1_win += 1
+
+          self.game_over = True
+        # draw
+        elif self.is_board_full():
+          print("Draw")
+          self.draw += 1
+
+          self.game_over = True
+        else:
+
+          # get state
+          state_old_1 = self.getState(1)
+          state_old_2 = self.getState(2)
+
+          # Player 2 turn
+          self.player = self.player % 2 + 1
+
+          # check player 2 out of deck
+          if self.is_deck_empty():
+            print("Player 2 Out of deck, Player 1 win")
+            self.player2_deckout += 1
+
+            self.game_over = True
+
+          # place mark when avialable
+          while True:
+            player2_action = self.player2.chooseAction(self.board, self.get_available_size(), self.player, state_old_2)
+
+            self.selecting_size = player2_action[1]
+
+            mark_row = player2_action[0] // 3
+            mark_col = player2_action[0] % 3
+
+            if self.place_mark( mark_row, mark_col ):
+              break
+
+          # draw mark
+          self.draw_mark()
+
+          # get new state after place mark
+          state_new_1 = self.getState(1)
+          state_new_2 = self.getState(2)
+
+          # check win
+          if self.check_win():
+            print("Player 2 (X) win")
+            self.player2_win += 1
+          
+            self.game_over = True
+          # draw
+          elif self.is_board_full() or self.is_deck_empty():
+            print("Draw")
+            self.draw += 1
+
+            self.game_over = True
+
+          # switch to player 1 turn
+          self.player = self.player % 2 + 1
+        
+        self.reset_screen()
+        self.selecting_size = 0
+
+        # update screen
+        pygame.display.update()
+        self.clock.tick(SPEED)
+
+      # restart game after game end
+      self.restart()
+
+    print(f"Player 1 win : {self.player1_win}, Player 2 win : {self.player2_win}, Draw : {self.draw}")
+
   def play(self):
     while not self.game_over:
       # player 1 turn
       print('AI turn')
 
       # get state
-      state_old = self.getState()
+      state_old_1 = self.getState(1)
 
       # place mark
       while True:
         # player 1 turn
-        player1_action = self.player1.chooseAction(self.board, self.get_available_size(), self.player, state_old)
+        player1_action = self.player1.chooseAction(self.board, self.get_available_size(), self.player, state_old_1)
 
         self.selecting_size = player1_action[1]
 

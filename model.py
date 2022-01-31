@@ -9,23 +9,24 @@ DEVICE = 'cuda'
 class Linear_QNet(nn.Module):
     def __init__(self, input_size, output_size):
         super().__init__()
-        self.input_layer = nn.Linear(input_size, 256)
-        self.dl1 = nn.Linear(256, 256)
-        self.output_layer = nn.Linear(256, output_size)
+        self.input_layer = nn.Linear(input_size, 64)
+        self.dl1 = nn.Linear(64, 64)
+        self.output_layer = nn.Linear(64, output_size)
+        torch.device('cuda:0')
 
     def forward(self, x):
         x = x.to(DEVICE)
 
-        x = self.input_layer(x)
-        x = torch.relu(x)
+        x = self.input_layer(x).to(DEVICE)
+        x = torch.relu(x).to(DEVICE)
 
-        x = self.dl1(x)
-        x = torch.relu(x)
+        x = self.dl1(x).to(DEVICE)
+        x = torch.relu(x).to(DEVICE)
 
-        x = self.output_layer(x)
-        x = torch.sigmoid(x)
+        x = self.output_layer(x).to(DEVICE)
+        x = torch.sigmoid(x).to(DEVICE)
         
-        return x
+        return x.to(DEVICE)
 
     def save(self, file_name='model.pth'):
         model_folder_path = './model'

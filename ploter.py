@@ -13,7 +13,6 @@ def plot(statistic, save=False):
 
     plt.plot(statistic["round"], statistic["player1_win"], label="Player 1 win")
     plt.plot(statistic["round"], statistic["player2_win"], label="Player 2 win")
-    plt.plot(statistic["round"], statistic["player2_win"], label="Player 2 win")
     plt.plot(statistic["round"], statistic["draw"], label="Draw")
     plt.plot(statistic["round"], statistic["player1_deckout"], label="Player 1 deckout")
     plt.plot(statistic["round"], statistic["player2_deckout"], label="Player 2 deckout")

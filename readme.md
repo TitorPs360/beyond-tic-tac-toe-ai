@@ -6,9 +6,9 @@ In this project, I made Traditional Tic Tac Toe game which can be controlled by 
 
 ## Youtube
 
-For more information can be seen in my [video]("...") on YouTube.
+For more information can be seen in my [video]("https://youtu.be/3q8Gh3yA9pw") on YouTube.
 
-[![new_thumb](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/cover.png)]("...")
+[![new_thumb](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/cover.png)]("https://youtu.be/3q8Gh3yA9pw")
 
 ## Requirements
 
@@ -102,6 +102,4 @@ conda create --name <env> --file requirements.txt
 
 ## Training Result
 
-|                                                        Text                                                         |                                                         Graph                                                         |
-| :-----------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------: |
-| ![Start Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/training_result01.png?raw=true) | ![Playing Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/training_result02.png?raw=true) |
+![Training result](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/training_result.png?raw=true)

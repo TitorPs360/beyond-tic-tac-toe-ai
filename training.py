@@ -8,4 +8,4 @@ if __name__ == '__main__':
   Game = TicTacToeGameAI(player1, player2)
 
   print("Training AI vs AI")
-  Game.train(500000)
+  Game.train(100000)

@@ -397,7 +397,7 @@ class TicTacToeGameAI:
       for j in range(3):
         if self.board[i][j][0] == player:
           state.append(1)
-        elif self.board[i][j][0] == player:
+        elif self.board[i][j][0] == player % 2 + 1:
           state.append(-1)
         else:
           state.append(0)

@@ -6,9 +6,9 @@ In this project, I made Traditional Tic Tac Toe game which can be controlled by 
 
 ## Youtube
 
-For more information can be seen in my [video]("https://youtu.be/3q8Gh3yA9pw") on YouTube.
+For more information can be seen in my [video](https://youtu.be/3q8Gh3yA9pw) on YouTube.
 
-[![new_thumb](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/cover.png)]("https://youtu.be/3q8Gh3yA9pw")
+[![new_thumb](./fig/cover.png)]("https://youtu.be/3q8Gh3yA9pw")
 
 ## Requirements
 
@@ -27,7 +27,7 @@ conda create --name <env> --file requirements.txt
 
 1. Open CMD or Terminal
 
-   ![alt text](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/step1.png?raw=true)
+   ![alt text](./fig/step1.png?raw=true)
 
 2. Activate anaconda environment
 
@@ -56,9 +56,9 @@ conda create --name <env> --file requirements.txt
 
     - Result
 
-    |                                                  Start Game                                                  |                                                  Playing Game                                                  |
-    | :----------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------: |
-    | ![Start Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/original01.png?raw=true) | ![Playing Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/original02.png?raw=true) |
+    |                    Start Game                    |                    Playing Game                    |
+    | :----------------------------------------------: | :------------------------------------------------: |
+    | ![Start Original](./fig/original01.png?raw=true) | ![Playing Original](./fig/original02.png?raw=true) |
 
   - For Beyond Tic Tac Toe (Human vs Human)
 
@@ -70,9 +70,9 @@ conda create --name <env> --file requirements.txt
 
     - Result
 
-      |                                                 Start Game                                                 |                                                 Playing Game                                                 |
-      | :--------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------: |
-      | ![Start Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/beyond01.png?raw=true) | ![Playing Original](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/beyond02.png?raw=true) |
+      |                   Start Game                   |                   Playing Game                   |
+      | :--------------------------------------------: | :----------------------------------------------: |
+      | ![Start Original](./fig/beyond01.png?raw=true) | ![Playing Original](./fig/beyond02.png?raw=true) |
 
   - For Training AI (AI vs AI)
 
@@ -84,7 +84,7 @@ conda create --name <env> --file requirements.txt
 
     - Result
 
-    ![Training](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/training.png?raw=true)
+    ![Training](./fig/training.png?raw=true)
 
   - For Beyond Tic Tac Toe (AI vs Human)
 
@@ -96,10 +96,10 @@ conda create --name <env> --file requirements.txt
 
     - Result
 
-    ![Play with AI](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/playwithai.png?raw=true)
+    ![Play with AI](./fig/playwithai.png?raw=true)
 
 4. Enjoy your Tic Tac Toe
 
 ## Training Result
 
-![Training result](https://github.com/TitorPs360/beyond-tic-tac-toe-ai/blob/main/fig/training_result.png?raw=true)
+![Training result](./fig/training_result.png?raw=true)
